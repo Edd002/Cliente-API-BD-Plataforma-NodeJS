@@ -1,17 +1,7 @@
-const express = require ('express')
+const express = require('express')
 const routerAPI = express.Router()
 
-const lista_produtos = {
-    produtos: [
-        { id: 1, descricao: "Arroz parboilizado 5Kg", valor: 25.00, marca: "Tio João"  },
-        { id: 2, descricao: "Maionese 250gr", valor: 7.20, marca: "Helmans"  },
-        { id: 3, descricao: "Iogurte Natural 200ml", valor: 2.50, marca: "Itambé"  },
-        { id: 4, descricao: "Batata Maior Palha 300gr", valor: 15.20, marca: "Chipps"  },
-        { id: 5, descricao: "Nescau 400gr", valor: 8.00, marca: "Nestlé"  },
-    ]
-}
-
-const knex = require('knex') ({
+const knex = require('knex')({
     client: 'pg',
     debug: true,
     connection: {
@@ -28,40 +18,61 @@ routerAPI.get('/produtos', (req, res, next) => {
                 message: 'Erro ao recuperar produtos - ' + err.message
             })
         })
-    //res.json(lista_produtos)
 })
 
-routerAPI.get ('/produtos/:id', (req, res, next) => {
-    let id = parseInt (req.params.id)
-    let idx = lista_produtos.produtos.findIndex (elem => elem.id === id)
-
-    if (idx != -1) {
-        res.status(200).json(lista_produtos.produtos[idx])
-    }
-    else {
-        res.status(404).json({ message: 'Produto não encontrado' })
-    }    
+routerAPI.get('/produtos/:id', (req, res, next) => {
+    knex.select('*').from('produto')
+        .where({ id: req.params.id })
+        .then(produtos => res.status(200).json(produtos))
+        .catch(err => {
+            res.status(500).json({
+                message: 'Erro ao recuperar produto - ' + err.message
+            })
+        })
 })
 
-routerAPI.post ('/produtos', (req, res, next) => {
-    res.json({ message: 'Recurso não implementado' })
+routerAPI.post('/produtos', (req, res, next) => {
+    knex('produto')
+        .insert({ descricao: req.body.descricao, valor: req.body.valor, marca: req.body.marca }, ['id'])
+        .then(result => {
+            res.status(201).json({ message: 'Produto incluído com sucesso.', id: result[0].id })
+        }).catch(err => {
+            res.status(500).json({
+                message: 'Erro ao incluir produto - ' + err.message
+            })
+        })
 })
 
-routerAPI.put ('/produtos/:id', (req, res, next) => {
-    res.json({ message: 'Recurso não implementado' })
+routerAPI.put('/produtos/:id', (req, res, next) => {
+    knex('produto')
+        .where({ id: req.params.id })
+        .update({ descricao: req.body.descricao, valor: req.body.valor, marca: req.body.marca })
+        .then(result => {
+            res.status(200).json({ message: 'Produto atualizado com sucesso.' })
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Erro ao atualizar produto - ' + err.message
+            })
+        })
 })
 
-routerAPI.delete ('/produtos/:id', (req, res, next) => {
-    let id = parseInt (req.params.id)
-    let idx = lista_produtos.produtos.findIndex (elem => elem.id === id)
-
-    if (idx != -1) {
-        lista_produtos.produtos.splice (idx, 1)
-        res.status(200).json({ message: 'produto excluido' })
-    }
-    else {
-        res.status(404).json({ message: 'Produto não encontrado' })
-    } 
+routerAPI.delete('/produtos/:id', (req, res, next) => {
+    knex('produto')
+        .where({ id: req.params.id })
+        .del()
+        .then(n => {
+            if (n) {
+                res.status(200).json({ message: 'Produto excluído com sucesso.' })
+            } else {
+                res.status(404).json({ message: 'Produto não encontrado para exclusão.' })
+            }
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: 'Erro ao excluir produto - ' + err.message
+            })
+        })
 })
 
 module.exports = routerAPI
