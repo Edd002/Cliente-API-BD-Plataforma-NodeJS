@@ -11,8 +11,24 @@ const lista_produtos = {
     ]
 }
 
-routerAPI.get ('/produtos', (req, res, next) => {
-    res.json(lista_produtos)
+const knex = require('knex') ({
+    client: 'pg',
+    debug: true,
+    connection: {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    }
+});
+
+routerAPI.get('/produtos', (req, res, next) => {
+    knex.select('*').from('produto')
+        .then(produtos => res.status(200).json(produtos))
+        .catch(err => {
+            res.status(500).json({
+                message: 'Erro ao recuperar produtos - ' + err.message
+            })
+        })
+    //res.json(lista_produtos)
 })
 
 routerAPI.get ('/produtos/:id', (req, res, next) => {

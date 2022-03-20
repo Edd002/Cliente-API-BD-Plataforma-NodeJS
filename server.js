@@ -1,4 +1,6 @@
+require('dotenv').config()
 const express = require ('express')
+
 console.log ('Tipo do Express: ' +  JSON.stringify (express))
 
 const morgan = require ('morgan')
